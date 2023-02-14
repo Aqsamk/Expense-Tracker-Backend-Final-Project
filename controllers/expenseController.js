@@ -58,14 +58,38 @@ const addexpense = (req, res) => {
 }
 
 const getexpenses = (req, res)=> {
-    
-    Expense.findAll({ where : { userId: req.user.id}}).then(expenses => {
-        return res.status(200).json({expenses, success: true})
+  try {
+      const uId = req.user.id;
+      const limit = req.query.limit ? parseInt(req.query.limit) : 2;
+      const page = req.query.page ? parseInt(req.query.page) : 1;
+      console.log(page);
+      console.log("AQSAM", req.user.id);
+      Expense.findAndCountAll({ where: { userId: uId } })
+      .then((data) => {
+      var pages = Math.ceil(data.count / limit);
+      req.user
+        .getExpenses({ offset: (page - 1) * limit, limit: limit })
+        .then((expense) => {
+          console.log(expense, "expense created");
+          res.json({ expense, pages: pages });
+        })
+        .catch((err) => console.log(err));
     })
-    .catch(err => {
-        console.log(err)
-        return res.status(500).json({ error: err, success: false})
-    })
+    .catch((err) => console.log(err));
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err, success: false });
+    }
+    //   return Expense.findAll({ where : { userId: req.user.id}}).then(expenses => {
+    //     const page = +req.query.page || 1
+    //     offset: (page - 1) * ITEMS_PER_PAGE;
+    //     limit : ITEMS_PER_PAGE
+    //     res.status(200).json({expenses, success: true})
+    // })
+    // .catch(err => {
+    //     console.log(err)
+    //     return res.status(500).json({ error: err, success: false})
+    // })
 }
 
 const deleteexpense = (req, res) => {

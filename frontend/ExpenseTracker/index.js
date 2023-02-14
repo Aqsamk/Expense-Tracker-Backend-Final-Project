@@ -33,24 +33,70 @@ function parseJwt (token) {
   return JSON.parse(jsonPayload);
 }
 
-window.addEventListener('DOMContentLoaded', ()=> {
-  const token  = localStorage.getItem('token')
-  const decodeToken = parseJwt(token)
-  console.log(decodeToken)
-  const ispremiumuser = decodeToken.ispremiumuser
-  if(ispremiumuser){
+window.addEventListener("DOMContentLoaded", getexpenses);
+
+async function getexpenses() {
+  try {
+    const parentnode = document.querySelector("#listOfExpenses");
+    //const select=localStorage.getItem('select');
+    parentnode.innerHTML = "";
+    const token = localStorage.getItem("token");
+    const select = localStorage.getItem("select");
+    const decodeToken = parseJwt(token)
+    console.log(decodeToken)
+    const ispremiumuser = decodeToken.ispremiumuser
+    if(ispremiumuser){
       showPremiumuserMessage()
       showLeaderboard()
-  }
-  axios.get('http://localhost:3000/expense/getexpenses', { headers: {"Authorization" : token} })
-  .then(response => {
-          response.data.expenses.forEach(expense => {
+    }
 
-              addNewExpensetoUI(expense);
+
+    const response = await  axios.get(`http://localhost:3000/expense/getexpenses?limit=${select}&page=${select}`, 
+          { headers: {"Authorization" : token} })
+          createpagination(response.data.pages);
+          response.data.expenses.forEach(expense => {
+          addNewExpensetoUI(expense);
           })
-  }).catch(err => {
+  } catch (err) {
       showError(err)
-  })
+    }
+};
+
+function createpagination(pages) {
+  document.querySelector("#pagination").innerHTML = "";
+  let childhtml = "";
+  for (var i = 1; i <= pages; i++) {
+    childhtml += `<a class="mx-2" id="page=${i}" >${i}</a>`;
+  }
+  const parentnode = document.querySelector("#pagination");
+  parentnode.innerHTML = parentnode.innerHTML + childhtml;
+}
+
+document.querySelector("#pagination").addEventListener("click", getexpensepage);
+async function getexpensepage(e) {
+  //alert(e.target.id)
+  const parentnode = document.querySelector("#listOfExpenses");
+  //    const select=localStorage.getItem('select');
+  parentnode.innerHTML = "";
+  // const limit=`${select}?'&limit='${select}`;
+  const token = localStorage.getItem("token");
+  try {
+    let response = await axios.get(
+      `http://localhost:3000/expense/getexpenses?${e.target.id}`,
+      { headers: { Authorization: token } }
+    );
+    for (let i = 0; i < response.data.expense.length; i++) {
+      addNewExpensetoUI(response.data.expense[i]);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+document.querySelector("#select").addEventListener("change", (e) => {
+  localStorage.setItem("select", e.target.value);
+  getexpenses();
+  // getexpensepage();
 });
 
 function addNewExpensetoUI(expense){
@@ -80,10 +126,10 @@ function showError(err){
   document.body.innerHTML += `<div style="color:red;"> ${err}</div>`
 }
 function showLeaderboard(){
-  const inputElement = document.createElement("input")
-  inputElement.type = "button"
-  inputElement.value = 'Show Leaderboard'
-  inputElement.onclick = async() => {
+      const inputElement = document.createElement("input")
+      inputElement.type = "button"
+      inputElement.value = 'Show Leaderboard'
+      inputElement.onclick = async() => {
       const token = localStorage.getItem('token')
       const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showLeaderBoard', { headers: {"Authorization" : token} })
       console.log(userLeaderBoardArray)
