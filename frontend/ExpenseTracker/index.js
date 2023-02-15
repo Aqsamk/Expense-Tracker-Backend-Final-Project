@@ -1,4 +1,4 @@
-function addNewExpense(e){
+/*function addNewExpense(e){
   e.preventDefault();
 
   const expenseDetails = {
@@ -71,6 +71,136 @@ function createpagination(pages) {
   const parentnode = document.querySelector("#pagination");
   parentnode.innerHTML = parentnode.innerHTML + childhtml;
 }
+const paginationLinks = document.getElementById('pagination')
+
+paginationLinks.forEach((link) => {
+  link.addEventListener("click", getexpensepage);
+});
+
+async function getexpensepage(e) {
+  //alert(e.target.id)
+  const parentnode = document.querySelector("#listOfExpenses");
+  //    const select=localStorage.getItem('select');
+  parentnode.innerHTML = "";
+  // const limit=`${select}?'&limit='${select}`;
+  const token = localStorage.getItem("token");
+  try {
+    let response = await axios.get(
+      `http://localhost:3000/expense/getexpenses?${e.target.id}`,
+      { headers: { Authorization: token } }
+    );
+    for (let i = 0; i < response.data.expenses.length; i++) {
+      addNewExpensetoUI(response.data.expenses[i]);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+document.querySelector("#select").addEventListener("change", (e) => {
+  localStorage.setItem("select", e.target.value);
+  getexpenses();
+  // getexpensepage();
+});*/
+
+async function addNewExpense(e) {
+  try {
+    e.preventDefault();
+    const expenseDetails = {
+      expenseamount: e.target.expenseamount.value,
+      description: e.target.description.value,
+      category: e.target.category.value,
+    };
+    console.log(expenseDetails);
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      "http://localhost:3000/expense/addexpense",
+      expenseDetails,
+      { headers: { Authorization: token } }
+    );
+    addNewExpensetoUI(response.data.expense);
+  } catch (err) {
+    showError(err);
+  }
+}
+function showLeaderBoard() {
+  const inputElement = document.createElement("input");
+  inputElement.type = "button";
+  inputElement.value = "Show Leaderboard";
+  inputElement.onclick = async () => {
+    const token = localStorage.getItem("token");
+    const userLeaderBoardArray = await axios.get(
+      "http://localhost:3000/premium/showLeaderBoard",
+      { headers: { Authorization: token } }
+    );
+    console.log(userLeaderBoardArray);
+    var leaderBoardElem = document.getElementById("leaderboard");
+    leaderBoardElem.innerHTML = "<h1> Leader Board </h1>";
+    userLeaderBoardArray.data.forEach((userDetails) => {
+      leaderBoardElem.innerHTML += `<li>Name - ${userDetails.name} Total Expense - ${userDetails.totalExpenses}  </li>`;
+    });
+  };
+  document.getElementById("message").appendChild(inputElement);
+}
+function showPremiumuserMessage() {
+  document.getElementById("rzp-button1").style.visibility = "hidden";
+  document.getElementById("message").innerHTML = "You are a Premium user";
+}
+function parseJwt(token) {
+  var base64Url = token.split(".")[1];
+  var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  var jsonPayload = decodeURIComponent(
+    window
+      .atob(base64)
+      .split("")
+      .map(function (c) {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join("")
+  );
+  return JSON.parse(jsonPayload);
+}
+window.addEventListener("DOMContentLoaded", getexpenses);
+
+async function getexpenses() {
+  try {
+    const parentnode = document.querySelector("#listOfExpenses");
+    //const select=localStorage.getItem('select');
+    parentnode.innerHTML = "";
+    const token = localStorage.getItem("token");
+    const select = localStorage.getItem("select");
+
+    const decodeToken = parseJwt(token);
+    console.log(decodeToken);
+    const ispremiumuser = decodeToken.ispremiumuser;
+    if (ispremiumuser) {
+      showPremiumuserMessage();
+      showLeaderBoard();
+    }
+    const response = await axios.get(
+      `http://localhost:3000/expense/getexpenses?limit=${select}&page=${select}`,
+      { headers: { Authorization: token } }
+    );
+    createpagination(response.data.pages);
+    response.data.expense.forEach((expense) => {
+      addNewExpensetoUI(expense);
+    });
+  } catch (err) {
+    showError(err);
+  }
+}
+
+
+
+function createpagination(pages) {
+  document.querySelector("#pagination").innerHTML = "";
+  let childhtml = "";
+  for (var i = 1; i <= pages; i++) {
+    childhtml += `<a class="mx-2" id="page=${i}" >${i}</a>`;
+  }
+  const parentnode = document.querySelector("#pagination");
+  parentnode.innerHTML = parentnode.innerHTML + childhtml;
+}
 
 document.querySelector("#pagination").addEventListener("click", getexpensepage);
 async function getexpensepage(e) {
@@ -98,6 +228,7 @@ document.querySelector("#select").addEventListener("change", (e) => {
   getexpenses();
   // getexpensepage();
 });
+
 
 function addNewExpensetoUI(expense){
   const parentElement = document.getElementById('listOfExpenses');

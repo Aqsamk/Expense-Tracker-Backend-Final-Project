@@ -10,9 +10,7 @@ const downloadexpense = async (req, res) => {
   try {
     const expenses = await UserServices.getExpenses(req); // here expenses are array
     console.log(expenses);
-    const stringifiedExpenses = JSON.stringify(expenses); // converting array to string , because you cannot write an array to a file but a string to a file
-    // filename should depend upon userid
-    //const filename = 'Expense.txt';
+    const stringifiedExpenses = JSON.stringify(expenses);
     const userId = req.user.id;
     //res.status(200).json({fileURL,success: true})
     const filename = `Expense${userId}/${new Date()}.txt`;
@@ -35,11 +33,6 @@ const addexpense = (req, res) => {
         return res.status(400).json({success: false, message: 'Parameters missing'})
     }
     
-    // Expense.create({ expenseAmount, description, category, userId: req.user.id}).then(expense => {
-    //     return res.status(201).json({expense, success: true } );
-    // }).catch(err => {
-    //     return res.status(500).json({success : false, error: err})
-    // })
     Expense.create({expenseAmount,description,category,userId:req.user.id}).then(expense => {
       const totalExpense = Number(req.user.totalExpenses) + Number(expenseAmount)
       console.log(totalExpense)
@@ -80,16 +73,7 @@ const getexpenses = (req, res)=> {
     console.log(err);
     return res.status(500).json({ error: err, success: false });
     }
-    //   return Expense.findAll({ where : { userId: req.user.id}}).then(expenses => {
-    //     const page = +req.query.page || 1
-    //     offset: (page - 1) * ITEMS_PER_PAGE;
-    //     limit : ITEMS_PER_PAGE
-    //     res.status(200).json({expenses, success: true})
-    // })
-    // .catch(err => {
-    //     console.log(err)
-    //     return res.status(500).json({ error: err, success: false})
-    // })
+   
 }
 
 const deleteexpense = (req, res) => {
